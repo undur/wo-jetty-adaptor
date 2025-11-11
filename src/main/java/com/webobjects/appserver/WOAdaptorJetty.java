@@ -3,6 +3,7 @@ package com.webobjects.appserver;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -221,15 +222,15 @@ public class WOAdaptorJetty extends WOAdaptor {
 			final String uri = jettyRequest.getHttpURI().getPathQuery();
 			final String httpVersion = jettyRequest.getConnectionMetaData().getHttpVersion().asString();
 			final Map<String, List<String>> headers = headerMap( jettyRequest );
-			final int contentLength = (int)jettyRequest.getLength();
 
 			final NSData contentData;
 
-			if( contentLength > 0 ) {
-				contentData = new WOInputStreamData( Request.asInputStream( jettyRequest ), contentLength );
+			try {
+				// FIXME: We're reading the entire NSData here, that shouldn't be required // Hugi 2025-11-11
+				contentData = new WOInputStreamData( new NSData( Request.asInputStream( jettyRequest ), 4096 ) );
 			}
-			else {
-				contentData = NSData.EmptyData;
+			catch( IOException e ) {
+				throw new UncheckedIOException( e );
 			}
 
 			final WORequest worequest = WOApplication.application().createRequest( method, uri, httpVersion, headers, contentData, null );
