@@ -221,19 +221,21 @@ public class WOAdaptorJetty extends WOAdaptor {
 			final String uri = jettyRequest.getHttpURI().getPathQuery();
 			final String httpVersion = jettyRequest.getConnectionMetaData().getHttpVersion().asString();
 			final Map<String, List<String>> headers = headerMap( jettyRequest );
-			NSData contentData;
+			final int contentLength = (int)jettyRequest.getLength();
 
-			try {
-				contentData = new WOInputStreamData( new NSData( Request.asInputStream( jettyRequest ), 4096 ) );
+			final NSData contentData;
+
+			if( contentLength > 0 ) {
+				contentData = new WOInputStreamData( Request.asInputStream( jettyRequest ), contentLength );
 			}
-			catch( IOException e ) {
-				throw new RuntimeException( e );
+			else {
+				contentData = NSData.EmptyData;
 			}
 
 			final WORequest worequest = WOApplication.application().createRequest( method, uri, httpVersion, headers, contentData, null );
 
-			for( HttpCookie entry : Request.getCookies( jettyRequest ) ) {
-				worequest.addCookie( jettyCookieToWOCookie( entry ) );
+			for( final HttpCookie jettyCookie : Request.getCookies( jettyRequest ) ) {
+				worequest.addCookie( jettyCookieToWOCookie( jettyCookie ) );
 			}
 
 			// FIXME: The Netty adaptor sets these. We might want to emulate that // Hugi 2025-11-11
@@ -246,7 +248,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 			return worequest;
 		}
 
-		private static WOCookie jettyCookieToWOCookie( HttpCookie jettyCookie ) {
+		private static WOCookie jettyCookieToWOCookie( final HttpCookie jettyCookie ) {
 			return new WOCookie(
 					jettyCookie.getName(),
 					jettyCookie.getValue(),
