@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.eclipse.jetty.http.HttpCookie;
-import org.eclipse.jetty.http.HttpCookie.SameSite;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.Handler;
@@ -154,9 +152,9 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			jettyResponse.setStatus( woResponse.status() );
 
-			for( final WOCookie woCookie : woResponse.cookies() ) {
-				Response.addCookie( jettyResponse, woCookieToJettyCookie( woCookie ) );
-			}
+			//			for( final WOCookie woCookie : woResponse.cookies() ) {
+			//				Response.addCookie( jettyResponse, woCookieToJettyCookie( woCookie ) );
+			//			}
 
 			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
 				jettyResponse.getHeaders().add( entry.getKey(), entry.getValue() );
@@ -184,34 +182,34 @@ public class WOAdaptorJetty extends WOAdaptor {
 			}
 		}
 
-		private static HttpCookie woCookieToJettyCookie( final WOCookie woCookie ) {
-			final HttpCookie.Builder jettyCookieBuilder = HttpCookie.build( woCookie.name(), woCookie.value() );
-
-			if( woCookie.domain() != null ) {
-				jettyCookieBuilder.domain( woCookie.domain() );
-			}
-
-			if( woCookie.path() != null ) {
-				jettyCookieBuilder.path( woCookie.path() );
-			}
-
-			jettyCookieBuilder.httpOnly( woCookie.isHttpOnly() );
-			jettyCookieBuilder.secure( woCookie.isSecure() );
-
-			// FIXME: The cookie's timeout might not always be set. In that case, we probably need to read this from the expires (or set the expires header) // Hugi 2025-11-11
-			jettyCookieBuilder.maxAge( woCookie.timeOut() );
-
-			if( woCookie.sameSite() != null ) {
-				try {
-					jettyCookieBuilder.sameSite( SameSite.from( woCookie.sameSite().name() ) );
-				}
-				catch( Exception e ) {
-					logger.error( "Unknown samesite: " + woCookie.sameSite() + " : " + e.getMessage() );
-				}
-			}
-
-			return jettyCookieBuilder.build();
-		}
+		//		private static HttpCookie woCookieToJettyCookie( final WOCookie woCookie ) {
+		//			final HttpCookie.Builder jettyCookieBuilder = HttpCookie.build( woCookie.name(), woCookie.value() );
+		//
+		//			if( woCookie.domain() != null ) {
+		//				jettyCookieBuilder.domain( woCookie.domain() );
+		//			}
+		//
+		//			if( woCookie.path() != null ) {
+		//				jettyCookieBuilder.path( woCookie.path() );
+		//			}
+		//
+		//			jettyCookieBuilder.httpOnly( woCookie.isHttpOnly() );
+		//			jettyCookieBuilder.secure( woCookie.isSecure() );
+		//
+		//			// FIXME: The cookie's timeout might not always be set. In that case, we probably need to read this from the expires (or set the expires header) // Hugi 2025-11-11
+		//			jettyCookieBuilder.maxAge( woCookie.timeOut() );
+		//
+		//			if( woCookie.sameSite() != null ) {
+		//				try {
+		//					jettyCookieBuilder.sameSite( SameSite.from( woCookie.sameSite().name() ) );
+		//				}
+		//				catch( Exception e ) {
+		//					logger.error( "Unknown samesite: " + woCookie.sameSite() + " : " + e.getMessage() );
+		//				}
+		//			}
+		//
+		//			return jettyCookieBuilder.build();
+		//		}
 
 		/**
 		 * @return the given Request converted to a WORequest
@@ -235,9 +233,9 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			final WORequest worequest = WOApplication.application().createRequest( method, uri, httpVersion, headers, contentData, null );
 
-			for( final HttpCookie jettyCookie : Request.getCookies( jettyRequest ) ) {
-				worequest.addCookie( jettyCookieToWOCookie( jettyCookie ) );
-			}
+			//			for( final HttpCookie jettyCookie : Request.getCookies( jettyRequest ) ) {
+			//				worequest.addCookie( jettyCookieToWOCookie( jettyCookie ) );
+			//			}
 
 			// FIXME: The Netty adaptor sets these. We might want to emulate that // Hugi 2025-11-11
 			// worequest._setOriginatingAddress( idr.getAddress() );
@@ -249,16 +247,16 @@ public class WOAdaptorJetty extends WOAdaptor {
 			return worequest;
 		}
 
-		private static WOCookie jettyCookieToWOCookie( final HttpCookie jettyCookie ) {
-			return new WOCookie(
-					jettyCookie.getName(),
-					jettyCookie.getValue(),
-					jettyCookie.getPath(),
-					jettyCookie.getDomain(),
-					(int)jettyCookie.getMaxAge(),
-					jettyCookie.isSecure(),
-					jettyCookie.isHttpOnly() );
-		}
+		//		private static WOCookie jettyCookieToWOCookie( final HttpCookie jettyCookie ) {
+		//			return new WOCookie(
+		//					jettyCookie.getName(),
+		//					jettyCookie.getValue(),
+		//					jettyCookie.getPath(),
+		//					jettyCookie.getDomain(),
+		//					(int)jettyCookie.getMaxAge(),
+		//					jettyCookie.isSecure(),
+		//					jettyCookie.isHttpOnly() );
+		//		}
 
 		/**
 		 * @return The headers from the Request as a Map
