@@ -5,7 +5,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -38,8 +37,6 @@ import com.webobjects.foundation.NSData;
 import com.webobjects.foundation.NSDictionary;
 import com.webobjects.foundation.NSForwardException;
 
-import er.extensions.foundation.ERXProperties;
-
 /**
  * A WOAdaptor based on Jetty.
  *
@@ -49,11 +46,6 @@ import er.extensions.foundation.ERXProperties;
 public class WOAdaptorJetty extends WOAdaptor {
 
 	private static final Logger logger = LoggerFactory.getLogger( WOAdaptorJetty.class );
-
-	/**
-	 * FIXME: Allows us to enable experimentation with streaming request bodies (that currently don't work) // Hugi 2025-11-12
-	 */
-	private static final boolean ENABLE_REQUEST_CONTENT_STREAMING = ERXProperties.booleanForKeyWithDefault( "JettyEnableReqestContentStreaming", false );
 
 	/**
 	 * Invoked by WO to construct an adaptor instance
@@ -203,31 +195,19 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			final NSData contentData;
 
-			// FIXME: Enabling streaming request handling is a little shaky at the moment, but that's what we want by default // Hugi 2025-11-12
-			if( ENABLE_REQUEST_CONTENT_STREAMING ) {
-				final int length = (int)jettyRequest.getLength();
+			final int length = (int)jettyRequest.getLength();
 
-				if( length > 0 ) {
-					logger.info( "Constructing streaming request content with length: " + length );
+			if( length > 0 ) {
+				logger.info( "Constructing streaming request content with length: " + length );
 
-					// All of this stream wrapping is required for WO to be happy. Yay!
-					final InputStream jettyStream = Request.asInputStream( jettyRequest );
-					final InputStream bufferedStream = new BufferedInputStream( jettyStream );
-					final WONoCopyPushbackInputStream wrappedStream = new WONoCopyPushbackInputStream( bufferedStream, length );
-					contentData = new WOInputStreamData( wrappedStream, length );
-				}
-				else {
-					contentData = NSData.EmptyData;
-				}
+				// All of this stream wrapping is required for WO to be happy. Yay!
+				final InputStream jettyStream = Request.asInputStream( jettyRequest );
+				final InputStream bufferedStream = new BufferedInputStream( jettyStream );
+				final WONoCopyPushbackInputStream wrappedStream = new WONoCopyPushbackInputStream( bufferedStream, length );
+				contentData = new WOInputStreamData( wrappedStream, length );
 			}
 			else {
-				try {
-					// FIXME: We're reading the entire NSData here, that shouldn't be required // Hugi 2025-11-11
-					contentData = new WOInputStreamData( new NSData( Request.asInputStream( jettyRequest ), 4096 ) );
-				}
-				catch( IOException e ) {
-					throw new UncheckedIOException( e );
-				}
+				contentData = NSData.EmptyData;
 			}
 
 			final WORequest worequest = WOApplication.application().createRequest( method, uri, httpVersion, headers, contentData, null );
