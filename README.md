@@ -49,7 +49,91 @@ Time per request:       0.069 [ms] (mean, across all concurrent requests)
 Transfer rate:          3388922.70 [Kbytes/sec] received
 ```
 
-## Future plans
+## WebSockets
 
-* Implement a websocket API
-* Get a life outside of WO/ng development
+wo-jetty-adaptor includes experimental WebSocket support.
+
+### Quick Start
+
+**1. Create a WebSocket handler:**
+
+```java
+import com.webobjects.appserver.websocket.WOWebSocketHandler;
+import com.webobjects.appserver.websocket.WOWebSocketSession;
+import java.io.IOException;
+
+public class ChatHandler extends WOWebSocketHandler {
+
+    @Override
+    public void onConnect(WOWebSocketSession session) {
+        logger.info("Client connected: {}", session.getRemoteAddress());
+        try {
+            session.sendText("Welcome to the chat!");
+        } catch (IOException e) {
+            logger.error("Failed to send welcome", e);
+        }
+    }
+
+    @Override
+    public void onTextMessage(WOWebSocketSession session, String message) {
+        logger.info("Received: {}", message);
+        // Broadcast to all connected clients, process message, etc.
+    }
+
+    @Override
+    public void onClose(WOWebSocketSession session, int statusCode, String reason) {
+        logger.info("Client disconnected");
+    }
+}
+```
+
+**2. Register the handler in your Application class:**
+
+```java
+public Application() {
+    WOWebSocketRegistry.register("/ws/chat", ChatHandler.class);
+}
+```
+
+**3. Connect from JavaScript:**
+
+```javascript
+const ws = new WebSocket('ws://localhost:1200/ws/chat');
+
+ws.onopen = () => {
+    console.log('Connected!');
+    ws.send('Hello from the browser!');
+};
+
+ws.onmessage = (event) => {
+    console.log('Received:', event.data);
+};
+```
+
+### WebSocket Handler API
+
+Your handler can override these methods:
+
+- **`onConnect(WOWebSocketSession session)`** - Called when a client connects
+- **`onTextMessage(WOWebSocketSession session, String message)`** - Text message received
+- **`onBinaryMessage(WOWebSocketSession session, ByteBuffer data)`** - Binary data received
+- **`onClose(WOWebSocketSession session, int statusCode, String reason)`** - Connection closed
+- **`onError(WOWebSocketSession session, Throwable cause)`** - Error occurred
+
+All handlers have access to `application` (the WOApplication instance).
+
+### WOWebSocketSession API
+
+The session object provides:
+
+- **`sendText(String message)`** - Send text to client
+- **`sendBinary(ByteBuffer data)`** - Send binary data to client
+- **`close()`** - Close the connection
+- **`close(int statusCode, String reason)`** - Close with status code
+- **`isOpen()`** - Check if connection is open
+- **`getRemoteAddress()`** - Get client address
+- **`getAttribute(String key)` / `setAttribute(String key, Object value)`** - Store per-session data
+
+### Example: Echo Server
+
+See `com.webobjects.appserver.websocket.examples.EchoWebSocketHandler` for a complete working example.

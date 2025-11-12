@@ -26,12 +26,18 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.websocket.server.ServerWebSocketContainer;
+import org.eclipse.jetty.websocket.server.WebSocketCreator;
+import org.eclipse.jetty.websocket.server.WebSocketUpgradeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.webobjects.appserver._private.WOInputStreamData;
 import com.webobjects.appserver._private.WONoCopyPushbackInputStream;
 import com.webobjects.appserver._private.WOProperties;
+import com.webobjects.appserver.websocket.WOJettyWebSocketListener;
+import com.webobjects.appserver.websocket.WOWebSocketHandler;
+import com.webobjects.appserver.websocket.WOWebSocketRegistry;
 import com.webobjects.foundation.NSArray;
 import com.webobjects.foundation.NSData;
 import com.webobjects.foundation.NSDictionary;
@@ -122,16 +128,78 @@ public class WOAdaptorJetty extends WOAdaptor {
 		final ServerConnector connector = new ServerConnector( server, connectionFactory );
 		connector.setPort( _port );
 		server.addConnector( connector );
-		server.setHandler( new WOHandler() );
+
+		// Create the main HTTP handler
+		final WOHandler woHandler = new WOHandler();
+
+		// Wrap with WebSocket upgrade capability
+		final Handler handler = createWebSocketHandler( server, woHandler );
+		server.setHandler( handler );
 
 		try {
 			logger.info( "Starting %s on port %s".formatted( getClass().getSimpleName(), _port ) );
+			if( WOWebSocketRegistry.registeredEndpointCount() > 0 ) {
+				logger.info( "WebSocket support enabled with {} registered endpoint(s)", WOWebSocketRegistry.registeredEndpointCount() );
+			}
 			server.start();
 		}
 		catch( final Exception e ) {
 			e.printStackTrace();
 			System.exit( -1 );
 		}
+	}
+
+	/**
+	 * Creates a handler that supports both HTTP and WebSocket requests.
+	 * WebSocket upgrade requests will be handled by the WebSocket infrastructure,
+	 * all other requests will be handled by the WO handler.
+	 */
+	private Handler createWebSocketHandler( final Server server, final WOHandler woHandler ) {
+		// Get the WebSocket container from the server
+		final ServerWebSocketContainer container = ServerWebSocketContainer.ensure( server );
+
+		// Create the upgrade handler that intercepts WebSocket upgrade requests
+		return new WebSocketUpgradeHandler( container ) {
+			@Override
+			public boolean handle( Request request, Response response, Callback callback ) throws Exception {
+				// Check if this is a WebSocket upgrade request for a registered path
+				final String path = request.getHttpURI().getPath();
+
+				if( WOWebSocketRegistry.hasHandlerForPath( path ) && isWebSocketUpgrade( request ) ) {
+					// Let the WebSocket infrastructure handle the upgrade
+					logger.debug( "WebSocket upgrade request for path: {}", path );
+
+					// Create a handler instance for this connection
+					final WOWebSocketHandler handler = WOWebSocketRegistry.createHandlerInstance( path, WOApplication.application() );
+
+					if( handler != null ) {
+						// Create the WebSocket creator that returns our listener
+						WebSocketCreator creator = new WebSocketCreator() {
+							@Override
+							public Object createWebSocket( org.eclipse.jetty.websocket.server.ServerUpgradeRequest req,
+									org.eclipse.jetty.websocket.server.ServerUpgradeResponse resp, Callback cb ) {
+								return new WOJettyWebSocketListener( handler );
+							}
+						};
+
+						// Perform the WebSocket upgrade
+						if( container.upgrade( creator, request, response, callback ) ) {
+							return true;
+						}
+					}
+				}
+
+				// Not a WebSocket upgrade, handle as normal HTTP request
+				return woHandler.handle( request, response, callback );
+			}
+
+			private boolean isWebSocketUpgrade( Request request ) {
+				final String upgrade = request.getHeaders().get( "Upgrade" );
+				final String connection = request.getHeaders().get( "Connection" );
+				return "websocket".equalsIgnoreCase( upgrade ) &&
+						connection != null && connection.toLowerCase().contains( "upgrade" );
+			}
+		};
 	}
 
 	public static class WOHandler extends Handler.Abstract {
