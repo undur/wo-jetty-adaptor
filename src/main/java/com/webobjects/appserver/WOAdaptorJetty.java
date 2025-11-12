@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.BindException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.Map.Entry;
 
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.ConnectionMetaData;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -42,11 +44,6 @@ import com.webobjects.foundation.NSForwardException;
 public class WOAdaptorJetty extends WOAdaptor {
 
 	private static final Logger logger = LoggerFactory.getLogger( WOAdaptorJetty.class );
-
-	/**
-	 * The port we're listening on
-	 */
-	private final int _port;
 
 	/**
 	 * Invoked by WO to construct an adaptor instance
@@ -182,43 +179,16 @@ public class WOAdaptorJetty extends WOAdaptor {
 			}
 		}
 
-		//		private static HttpCookie woCookieToJettyCookie( final WOCookie woCookie ) {
-		//			final HttpCookie.Builder jettyCookieBuilder = HttpCookie.build( woCookie.name(), woCookie.value() );
-		//
-		//			if( woCookie.domain() != null ) {
-		//				jettyCookieBuilder.domain( woCookie.domain() );
-		//			}
-		//
-		//			if( woCookie.path() != null ) {
-		//				jettyCookieBuilder.path( woCookie.path() );
-		//			}
-		//
-		//			jettyCookieBuilder.httpOnly( woCookie.isHttpOnly() );
-		//			jettyCookieBuilder.secure( woCookie.isSecure() );
-		//
-		//			// FIXME: The cookie's timeout might not always be set. In that case, we probably need to read this from the expires (or set the expires header) // Hugi 2025-11-11
-		//			jettyCookieBuilder.maxAge( woCookie.timeOut() );
-		//
-		//			if( woCookie.sameSite() != null ) {
-		//				try {
-		//					jettyCookieBuilder.sameSite( SameSite.from( woCookie.sameSite().name() ) );
-		//				}
-		//				catch( Exception e ) {
-		//					logger.error( "Unknown samesite: " + woCookie.sameSite() + " : " + e.getMessage() );
-		//				}
-		//			}
-		//
-		//			return jettyCookieBuilder.build();
-		//		}
-
 		/**
 		 * @return the given Request converted to a WORequest
 		 */
 		private static WORequest requestToWORequest( final Request jettyRequest ) {
 
+			final ConnectionMetaData md = jettyRequest.getConnectionMetaData();
+
 			final String method = jettyRequest.getMethod();
 			final String uri = jettyRequest.getHttpURI().getPathQuery();
-			final String httpVersion = jettyRequest.getConnectionMetaData().getHttpVersion().asString();
+			final String httpVersion = md.getHttpVersion().asString();
 			final Map<String, List<String>> headers = headerMap( jettyRequest );
 
 			final NSData contentData;
@@ -237,26 +207,26 @@ public class WOAdaptorJetty extends WOAdaptor {
 			//				worequest.addCookie( jettyCookieToWOCookie( jettyCookie ) );
 			//			}
 
-			// FIXME: The Netty adaptor sets these. We might want to emulate that // Hugi 2025-11-11
-			// worequest._setOriginatingAddress( idr.getAddress() );
-			// worequest._setOriginatingPort( idr.getPort() );
-			// worequest._setAcceptingAddress(idr.getLocalAddress());
-			// worequest._setOriginatingAdaptor( null );
-			// worequest._setAcceptingPort(connectionSocket.getLocalPort());
+			populateAddresses( md, worequest );
 
 			return worequest;
 		}
 
-		//		private static WOCookie jettyCookieToWOCookie( final HttpCookie jettyCookie ) {
-		//			return new WOCookie(
-		//					jettyCookie.getName(),
-		//					jettyCookie.getValue(),
-		//					jettyCookie.getPath(),
-		//					jettyCookie.getDomain(),
-		//					(int)jettyCookie.getMaxAge(),
-		//					jettyCookie.isSecure(),
-		//					jettyCookie.isHttpOnly() );
-		//		}
+		/**
+		 * Populate origin data in the WORequest
+		 */
+		private static void populateAddresses( final ConnectionMetaData md, final WORequest worequest ) {
+
+			if( md.getRemoteSocketAddress() instanceof InetSocketAddress remote ) {
+				worequest._setOriginatingAddress( remote.getAddress() );
+				worequest._setOriginatingPort( remote.getPort() );
+			}
+
+			if( md.getLocalSocketAddress() instanceof InetSocketAddress local ) {
+				worequest._setAcceptingAddress( local.getAddress() );
+				worequest._setAcceptingPort( local.getPort() );
+			}
+		}
 
 		/**
 		 * @return The headers from the Request as a Map
@@ -271,4 +241,45 @@ public class WOAdaptorJetty extends WOAdaptor {
 			return map;
 		}
 	}
+
+	//		private static WOCookie jettyCookieToWOCookie( final HttpCookie jettyCookie ) {
+	//			return new WOCookie(
+	//					jettyCookie.getName(),
+	//					jettyCookie.getValue(),
+	//					jettyCookie.getPath(),
+	//					jettyCookie.getDomain(),
+	//					(int)jettyCookie.getMaxAge(),
+	//					jettyCookie.isSecure(),
+	//					jettyCookie.isHttpOnly() );
+	//		}
+	//
+	//		private static HttpCookie woCookieToJettyCookie( final WOCookie woCookie ) {
+	//			final HttpCookie.Builder jettyCookieBuilder = HttpCookie.build( woCookie.name(), woCookie.value() );
+	//
+	//			if( woCookie.domain() != null ) {
+	//				jettyCookieBuilder.domain( woCookie.domain() );
+	//			}
+	//
+	//			if( woCookie.path() != null ) {
+	//				jettyCookieBuilder.path( woCookie.path() );
+	//			}
+	//
+	//			jettyCookieBuilder.httpOnly( woCookie.isHttpOnly() );
+	//			jettyCookieBuilder.secure( woCookie.isSecure() );
+	//
+	//			// FIXME: The cookie's timeout might not always be set. In that case, we probably need to read this from the expires (or set the expires header) // Hugi 2025-11-11
+	//			jettyCookieBuilder.maxAge( woCookie.timeOut() );
+	//
+	//			if( woCookie.sameSite() != null ) {
+	//				try {
+	//					jettyCookieBuilder.sameSite( SameSite.from( woCookie.sameSite().name() ) );
+	//				}
+	//				catch( Exception e ) {
+	//					logger.error( "Unknown samesite: " + woCookie.sameSite() + " : " + e.getMessage() );
+	//				}
+	//			}
+	//
+	//			return jettyCookieBuilder.build();
+	//		}
+
 }
