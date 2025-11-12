@@ -35,6 +35,8 @@ import com.webobjects.foundation.NSData;
 import com.webobjects.foundation.NSDictionary;
 import com.webobjects.foundation.NSForwardException;
 
+import er.extensions.foundation.ERXProperties;
+
 /**
  * A WOAdaptor based on Jetty.
  *
@@ -48,7 +50,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 	/**
 	 * FIXME: Allows us to enable experimentation with streaming request bodies (that currently don't work) // Hugi 2025-11-12
 	 */
-	private static final boolean ENABLE_REQUEST_CONTENT_STREAMING = true;
+	private static final boolean ENABLE_REQUEST_CONTENT_STREAMING = ERXProperties.booleanForKeyWithDefault( "JettyEnableReqestContentStreaming", false );
 
 	/**
 	 * Invoked by WO to construct an adaptor instance
