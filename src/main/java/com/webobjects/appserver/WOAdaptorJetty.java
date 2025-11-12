@@ -1,7 +1,9 @@
 package com.webobjects.appserver;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.BindException;
@@ -29,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.webobjects.appserver._private.WOInputStreamData;
+import com.webobjects.appserver._private.WONoCopyPushbackInputStream;
 import com.webobjects.appserver._private.WOProperties;
 import com.webobjects.foundation.NSArray;
 import com.webobjects.foundation.NSData;
@@ -206,7 +209,12 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 				if( length > 0 ) {
 					logger.info( "Constructing streaming request content with length: " + length );
-					contentData = new WOInputStreamData( Request.asInputStream( jettyRequest ), length );
+
+					// All of this stream wrapping is required for WO to be happy. Yay!
+					final InputStream jettyStream = Request.asInputStream( jettyRequest );
+					final InputStream bufferedStream = new BufferedInputStream( jettyStream );
+					final WONoCopyPushbackInputStream wrappedStream = new WONoCopyPushbackInputStream( bufferedStream, length );
+					contentData = new WOInputStreamData( wrappedStream, length );
 				}
 				else {
 					contentData = NSData.EmptyData;
