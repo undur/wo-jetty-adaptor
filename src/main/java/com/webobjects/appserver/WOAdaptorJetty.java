@@ -48,7 +48,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 	/**
 	 * FIXME: Allows us to enable experimentation with streaming request bodies (that currently don't work) // Hugi 2025-11-12
 	 */
-	private static final boolean ENABLE_REQUEST_CONTENT_STREAMING = false;
+	private static final boolean ENABLE_REQUEST_CONTENT_STREAMING = true;
 
 	/**
 	 * Invoked by WO to construct an adaptor instance
@@ -198,24 +198,25 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			final NSData contentData;
 
-			if( !ENABLE_REQUEST_CONTENT_STREAMING ) {
+			// FIXME: Enabling streaming request handling is a little shaky at the moment, but that's what we want by default // Hugi 2025-11-12
+			if( ENABLE_REQUEST_CONTENT_STREAMING ) {
+				final int length = (int)jettyRequest.getLength();
+
+				if( length > 0 ) {
+					logger.info( "Constructing streaming request content with length: " + length );
+					contentData = new WOInputStreamData( Request.asInputStream( jettyRequest ), length );
+				}
+				else {
+					contentData = NSData.EmptyData;
+				}
+			}
+			else {
 				try {
 					// FIXME: We're reading the entire NSData here, that shouldn't be required // Hugi 2025-11-11
 					contentData = new WOInputStreamData( new NSData( Request.asInputStream( jettyRequest ), 4096 ) );
 				}
 				catch( IOException e ) {
 					throw new UncheckedIOException( e );
-				}
-			}
-			else {
-				final int length = (int)jettyRequest.getLength();
-
-				if( length > 0 ) {
-					// FIXME: We're reading the entire NSData here, that shouldn't be required // Hugi 2025-11-11
-					contentData = new WOInputStreamData( Request.asInputStream( jettyRequest ), length );
-				}
-				else {
-					contentData = NSData.EmptyData;
 				}
 			}
 
