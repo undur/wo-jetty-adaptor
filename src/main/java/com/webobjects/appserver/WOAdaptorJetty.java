@@ -132,7 +132,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 		}
 	}
 
-	public class WOHandler extends Handler.Abstract {
+	public static class WOHandler extends Handler.Abstract {
 
 		@Override
 		public boolean handle( Request request, Response response, Callback callback ) throws Exception {
