@@ -21,9 +21,9 @@ Build/install, add as a dependency to your application and pass in the argument 
 
 ## Does this actually work?
 
-In most regards. But it currently can't properly handle streaming request bodies, so request bodies will by default be loaded into memory before handling the request. Which isn't great for handling large, streaming uploads.
+In most regards. But it currently can't handle streaming multipart requests, so request content will by default be loaded into memory before handling. Which isn't great for handling large, streaming uploads.
 
-The adaptor can be configured to handle streaming requests (which works for some requests) by setting `-JettyEnableReqestContentStreaming YES`.
+Streaming request handling works fine if the request isn't a multipart though. It can be enabled by setting `-JettyEnableReqestContentStreaming YES`.
 
 ## Performance
 
