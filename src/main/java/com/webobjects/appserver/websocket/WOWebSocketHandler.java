@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.webobjects.appserver.WOApplication;
+import com.webobjects.appserver.WORequest;
 
 /**
  * Base class for WebSocket handlers in WebObjects applications.
@@ -41,17 +42,16 @@ public abstract class WOWebSocketHandler {
 	/**
 	 * The WOApplication instance that this handler is associated with
 	 */
-	protected WOApplication application;
+	private WOApplication _application;
 
 	/**
 	 * Called when a new WebSocket connection is established.
 	 * Override this to perform initialization when a client connects.
 	 *
 	 * @param session the WebSocket session for this connection
+	 * @param request the initial HTTP request that initiated the WebSocket upgrade
 	 */
-	public void onConnect( WOWebSocketSession session ) {
-		// Default implementation does nothing
-	}
+	public void onConnect( WOWebSocketSession session, WORequest request ) {}
 
 	/**
 	 * Called when a text message is received from the client.
@@ -59,9 +59,7 @@ public abstract class WOWebSocketHandler {
 	 * @param session the WebSocket session
 	 * @param message the text message received
 	 */
-	public void onTextMessage( WOWebSocketSession session, String message ) {
-		// Default implementation does nothing
-	}
+	public void onTextMessage( WOWebSocketSession session, String message ) {}
 
 	/**
 	 * Called when a binary message is received from the client.
@@ -69,9 +67,7 @@ public abstract class WOWebSocketHandler {
 	 * @param session the WebSocket session
 	 * @param data the binary data received
 	 */
-	public void onBinaryMessage( WOWebSocketSession session, ByteBuffer data ) {
-		// Default implementation does nothing
-	}
+	public void onBinaryMessage( WOWebSocketSession session, ByteBuffer data ) {}
 
 	/**
 	 * Called when the WebSocket connection is closed.
@@ -80,9 +76,7 @@ public abstract class WOWebSocketHandler {
 	 * @param statusCode the close status code
 	 * @param reason the reason for closing
 	 */
-	public void onClose( WOWebSocketSession session, int statusCode, String reason ) {
-		// Default implementation does nothing
-	}
+	public void onClose( WOWebSocketSession session, int statusCode, String reason ) {}
 
 	/**
 	 * Called when an error occurs on the WebSocket connection.
@@ -91,7 +85,6 @@ public abstract class WOWebSocketHandler {
 	 * @param cause the error that occurred
 	 */
 	public void onError( WOWebSocketSession session, Throwable cause ) {
-		// Default implementation logs the error
 		logger.error( "WebSocket error", cause );
 	}
 
@@ -101,13 +94,13 @@ public abstract class WOWebSocketHandler {
 	 * @param application the application instance
 	 */
 	public final void _setApplication( WOApplication application ) {
-		this.application = application;
+		this._application = application;
 	}
 
 	/**
 	 * @return the WOApplication instance
 	 */
 	public final WOApplication application() {
-		return application;
+		return _application;
 	}
 }

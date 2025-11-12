@@ -7,6 +7,8 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.webobjects.appserver.WORequest;
+
 /**
  * Jetty WebSocket listener that delegates to a WOWebSocketHandler.
  * This bridges Jetty's WebSocket API to WebObjects' WebSocket API.
@@ -16,17 +18,19 @@ public class WOJettyWebSocketListener implements Session.Listener {
 	private static final Logger logger = LoggerFactory.getLogger( WOJettyWebSocketListener.class );
 
 	private final WOWebSocketHandler handler;
+	private final WORequest initialRequest;
 	private WOJettyWebSocketSession woSession;
 
-	public WOJettyWebSocketListener( WOWebSocketHandler handler ) {
+	public WOJettyWebSocketListener( WOWebSocketHandler handler, WORequest initialRequest ) {
 		this.handler = handler;
+		this.initialRequest = initialRequest;
 	}
 
 	@Override
 	public void onWebSocketOpen( Session session ) {
 		woSession = new WOJettyWebSocketSession( session );
 		try {
-			handler.onConnect( woSession );
+			handler.onConnect( woSession, initialRequest );
 		}
 		catch( Exception e ) {
 			logger.error( "Error in WebSocket onConnect handler", e );

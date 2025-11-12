@@ -65,8 +65,13 @@ import java.io.IOException;
 public class ChatHandler extends WOWebSocketHandler {
 
     @Override
-    public void onConnect(WOWebSocketSession session) {
+    public void onConnect(WOWebSocketSession session, WORequest request) {
         logger.info("Client connected: {}", session.getRemoteAddress());
+
+        // Access the initial HTTP request for authentication, session management, etc.
+        String sessionId = request.cookieValueForKey("wosid");
+        String userId = request.stringFormValueForKey("userId");
+
         try {
             session.sendText("Welcome to the chat!");
         } catch (IOException e) {
@@ -114,7 +119,7 @@ ws.onmessage = (event) => {
 
 Your handler can override these methods:
 
-- **`onConnect(WOWebSocketSession session)`** - Called when a client connects
+- **`onConnect(WOWebSocketSession session, WORequest request)`** - Called when a client connects (includes the initial HTTP request for authentication/cookies/headers)
 - **`onTextMessage(WOWebSocketSession session, String message)`** - Text message received
 - **`onBinaryMessage(WOWebSocketSession session, ByteBuffer data)`** - Binary data received
 - **`onClose(WOWebSocketSession session, int statusCode, String reason)`** - Connection closed

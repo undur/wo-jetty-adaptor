@@ -41,8 +41,14 @@ import com.webobjects.appserver.websocket.WOWebSocketSession;
 public class EchoWebSocketHandler extends WOWebSocketHandler {
 
 	@Override
-	public void onConnect( WOWebSocketSession session ) {
+	public void onConnect( WOWebSocketSession session, com.webobjects.appserver.WORequest request ) {
 		logger.info( "WebSocket connected: {}", session.getRemoteAddress() );
+
+		// You now have access to the initial HTTP request!
+		// Examples:
+		// - String sessionId = request.cookieValueForKey("wosid");
+		// - String authToken = request.headerForKey("Authorization");
+		// - String userId = request.stringFormValueForKey("userId");
 
 		// Send a welcome message
 		try {

@@ -173,12 +173,15 @@ public class WOAdaptorJetty extends WOAdaptor {
 					final WOWebSocketHandler handler = WOWebSocketRegistry.createHandlerInstance( path, WOApplication.application() );
 
 					if( handler != null ) {
+						// Convert the Jetty request to a WORequest so we can pass it to the handler
+						final WORequest woRequest = WOHandler.requestToWORequest( request );
+
 						// Create the WebSocket creator that returns our listener
 						WebSocketCreator creator = new WebSocketCreator() {
 							@Override
 							public Object createWebSocket( org.eclipse.jetty.websocket.server.ServerUpgradeRequest req,
 									org.eclipse.jetty.websocket.server.ServerUpgradeResponse resp, Callback cb ) {
-								return new WOJettyWebSocketListener( handler );
+								return new WOJettyWebSocketListener( handler, woRequest );
 							}
 						};
 
