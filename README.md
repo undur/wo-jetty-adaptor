@@ -21,9 +21,7 @@ Build/install, add as a dependency to your application and pass in the argument 
 
 ## Does this actually work?
 
-In most regards. But it currently can't handle streaming multipart requests, so request content will by default be loaded into memory before handling. Which isn't great for handling large, streaming uploads.
-
-Streaming request handling works fine if the request isn't a multipart though. It can be enabled by setting `-JettyEnableReqestContentStreaming YES`.
+Yes. Since November 12. 2025 it's been deployed on a couple of sites, some of which see quite a bit of traffic.
 
 ## Performance
 
@@ -54,5 +52,4 @@ Transfer rate:          3388922.70 [Kbytes/sec] received
 ## Future plans
 
 * Implement a websocket API
-* Fix the streaming request content thing
 * Get a life outside of WO/ng development
