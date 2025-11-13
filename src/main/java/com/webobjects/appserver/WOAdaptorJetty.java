@@ -181,16 +181,21 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 				jettyResponse.getHeaders().put( "content-length", String.valueOf( contentLength ) );
 
+				// Content.Source.from() handles buffering internally via ByteBufferPool
+				// No need to wrap in BufferedInputStream (would cause double-buffering)
 				final Content.Source cs = Content.Source.from( woResponse.contentInputStream() );
 				Content.copy( cs, jettyResponse, callback );
 			}
 			else {
-				jettyResponse.getHeaders().put( "content-length", String.valueOf( woResponse.content().length() ) );
+				final NSData responseContent = woResponse.content();
+
+				jettyResponse.getHeaders().put( "content-length", String.valueOf( responseContent.length() ) );
 
 				try( final OutputStream out = Response.asBufferedOutputStream( jettyRequest, jettyResponse )) {
-					woResponse.content().writeToStream( out );
-					callback.succeeded();
+					responseContent.writeToStream( out );
 				}
+
+				callback.succeeded();
 			}
 		}
 
