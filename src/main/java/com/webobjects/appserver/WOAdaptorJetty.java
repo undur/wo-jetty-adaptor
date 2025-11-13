@@ -9,6 +9,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -183,15 +187,78 @@ public class WOAdaptorJetty extends WOAdaptor {
 				Content.copy( cs, jettyResponse, callback );
 			}
 			else {
-				final NSData responseContent = woResponse.content();
+				// Optimize content writing by accessing WOResponse internals directly
+				// This avoids the inefficient StringBuilder -> String -> bytes conversion in WOMessage.content()
+				writeResponseContentOptimized( woResponse, jettyRequest, jettyResponse );
+				callback.succeeded();
+			}
+		}
 
-				jettyResponse.getHeaders().put( "content-length", String.valueOf( responseContent.length() ) );
+		/**
+		 * Optimized response content writing that avoids WOMessage.content()'s inefficient conversion.
+		 *
+		 * WOMessage.content() does: StringBuilder -> new String() -> getBytes() -> new NSData()
+		 * This method directly encodes StringBuilder to bytes and streams them, avoiding intermediate objects.
+		 *
+		 * @param woResponse the WO response
+		 * @param jettyRequest the Jetty request (needed for buffered output)
+		 * @param jettyResponse the Jetty response to write to
+		 * @throws IOException if writing fails
+		 */
+		private static void writeResponseContentOptimized( final WOResponse woResponse, final Request jettyRequest, final Response jettyResponse ) throws IOException {
+
+			// Access WOMessage's protected fields directly (we're in the same package)
+			final StringBuilder contentBuilder = woResponse._content;
+			final NSData contentData = woResponse._contentData;
+
+			// Determine which content source to use (StringBuilder takes precedence)
+			if( contentBuilder != null && contentBuilder.length() > 0 ) {
+				// Content is in StringBuilder - encode it efficiently
+				final String encoding = woResponse.contentEncoding();
+				final Charset charset = Charset.forName( encoding );
+
+				// Use CharsetEncoder for efficient encoding without intermediate String allocation
+				final CharsetEncoder encoder = charset.newEncoder();
+				final CharBuffer charBuffer = CharBuffer.wrap( contentBuilder );
+
+				// Estimate byte buffer size (most encodings are 1-4 bytes per char)
+				final int estimatedSize = (int)(contentBuilder.length() * encoder.maxBytesPerChar());
+				final ByteBuffer byteBuffer = ByteBuffer.allocate( estimatedSize );
+
+				// Encode directly from StringBuilder to ByteBuffer
+				encoder.encode( charBuffer, byteBuffer, true );
+				encoder.flush( byteBuffer );
+
+				byteBuffer.flip();
+				final int contentLength = byteBuffer.remaining();
+
+				jettyResponse.getHeaders().put( "content-length", String.valueOf( contentLength ) );
 
 				try( final OutputStream out = Response.asBufferedOutputStream( jettyRequest, jettyResponse )) {
-					responseContent.writeToStream( out );
+					// Write the encoded bytes directly
+					if( byteBuffer.hasArray() ) {
+						// If ByteBuffer is array-backed, write directly from array (zero-copy)
+						out.write( byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), contentLength );
+					}
+					else {
+						// Fallback for direct ByteBuffers
+						final byte[] bytes = new byte[contentLength];
+						byteBuffer.get( bytes );
+						out.write( bytes );
+					}
 				}
+			}
+			else if( contentData != null && contentData.length() > 0 ) {
+				// Content is in NSData - use the standard path
+				jettyResponse.getHeaders().put( "content-length", String.valueOf( contentData.length() ) );
 
-				callback.succeeded();
+				try( final OutputStream out = Response.asBufferedOutputStream( jettyRequest, jettyResponse )) {
+					contentData.writeToStream( out );
+				}
+			}
+			else {
+				// Empty response
+				jettyResponse.getHeaders().put( "content-length", "0" );
 			}
 		}
 
