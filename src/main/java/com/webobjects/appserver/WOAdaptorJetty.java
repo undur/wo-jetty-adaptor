@@ -164,10 +164,6 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			jettyResponse.setStatus( woResponse.status() );
 
-			//			for( final WOCookie woCookie : woResponse.cookies() ) {
-			//				Response.addCookie( jettyResponse, woCookieToJettyCookie( woCookie ) );
-			//			}
-
 			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
 				jettyResponse.getHeaders().add( entry.getKey(), entry.getValue() );
 			}
@@ -230,10 +226,6 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			final WORequest worequest = WOApplication.application().createRequest( method, uri, httpVersion, headers, contentData, null );
 
-			//			for( final HttpCookie jettyCookie : Request.getCookies( jettyRequest ) ) {
-			//				worequest.addCookie( jettyCookieToWOCookie( jettyCookie ) );
-			//			}
-
 			populateAddresses( md, worequest );
 
 			return worequest;
@@ -268,45 +260,4 @@ public class WOAdaptorJetty extends WOAdaptor {
 			return map;
 		}
 	}
-
-	//		private static WOCookie jettyCookieToWOCookie( final HttpCookie jettyCookie ) {
-	//			return new WOCookie(
-	//					jettyCookie.getName(),
-	//					jettyCookie.getValue(),
-	//					jettyCookie.getPath(),
-	//					jettyCookie.getDomain(),
-	//					(int)jettyCookie.getMaxAge(),
-	//					jettyCookie.isSecure(),
-	//					jettyCookie.isHttpOnly() );
-	//		}
-	//
-	//		private static HttpCookie woCookieToJettyCookie( final WOCookie woCookie ) {
-	//			final HttpCookie.Builder jettyCookieBuilder = HttpCookie.build( woCookie.name(), woCookie.value() );
-	//
-	//			if( woCookie.domain() != null ) {
-	//				jettyCookieBuilder.domain( woCookie.domain() );
-	//			}
-	//
-	//			if( woCookie.path() != null ) {
-	//				jettyCookieBuilder.path( woCookie.path() );
-	//			}
-	//
-	//			jettyCookieBuilder.httpOnly( woCookie.isHttpOnly() );
-	//			jettyCookieBuilder.secure( woCookie.isSecure() );
-	//
-	//			// FIXME: The cookie's timeout might not always be set. In that case, we probably need to read this from the expires (or set the expires header) // Hugi 2025-11-11
-	//			jettyCookieBuilder.maxAge( woCookie.timeOut() );
-	//
-	//			if( woCookie.sameSite() != null ) {
-	//				try {
-	//					jettyCookieBuilder.sameSite( SameSite.from( woCookie.sameSite().name() ) );
-	//				}
-	//				catch( Exception e ) {
-	//					logger.error( "Unknown samesite: " + woCookie.sameSite() + " : " + e.getMessage() );
-	//				}
-	//			}
-	//
-	//			return jettyCookieBuilder.build();
-	//		}
-
 }
