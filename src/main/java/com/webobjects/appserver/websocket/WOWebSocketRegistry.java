@@ -13,6 +13,7 @@ import com.webobjects.appserver.WOApplication;
  * Use this to register WebSocket handlers for specific URL paths.
  *
  * Example usage in your Application class:
+ *
  * <pre>
  * public void finishInitialization() {
  *     super.finishInitialization();
@@ -21,6 +22,7 @@ import com.webobjects.appserver.WOApplication;
  * }
  * </pre>
  */
+
 public class WOWebSocketRegistry {
 
 	private static final Logger logger = LoggerFactory.getLogger( WOWebSocketRegistry.class );
@@ -37,15 +39,17 @@ public class WOWebSocketRegistry {
 	 * @param handlerClass the handler class to instantiate for connections to this path
 	 */
 	public static void register( String path, Class<? extends WOWebSocketHandler> handlerClass ) {
+
 		if( path == null || path.isEmpty() ) {
 			throw new IllegalArgumentException( "WebSocket path cannot be null or empty" );
 		}
+
 		if( handlerClass == null ) {
 			throw new IllegalArgumentException( "Handler class cannot be null" );
 		}
 
 		// Normalize path to start with /
-		String normalizedPath = path.startsWith( "/" ) ? path : "/" + path;
+		final String normalizedPath = path.startsWith( "/" ) ? path : "/" + path;
 
 		logger.info( "Registering WebSocket handler {} for path {}", handlerClass.getSimpleName(), normalizedPath );
 		handlers.put( normalizedPath, handlerClass );

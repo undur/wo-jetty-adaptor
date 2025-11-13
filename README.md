@@ -139,6 +139,41 @@ The session object provides:
 - **`getRemoteAddress()`** - Get client address
 - **`getAttribute(String key)` / `setAttribute(String key, Object value)`** - Store per-session data
 
+### Heartbeat Support
+
+To keep connections alive and detect dead connections, use the built-in heartbeat:
+
+```java
+@Override
+public void onConnect(WOWebSocketSession session, WORequest request) {
+    // Send "ping" every 120 seconds (2 minutes)
+    startHeartbeat(session, 120);
+}
+
+@Override
+public void onTextMessage(WOWebSocketSession session, String message) {
+    // Filter out heartbeat messages
+    if (isHeartbeatMessage(session, message)) {
+        return;
+    }
+    // Handle actual messages...
+}
+
+@Override
+public void onClose(WOWebSocketSession session, int statusCode, String reason) {
+    stopHeartbeat(session); // Cleanup (done automatically, but good practice)
+}
+```
+
+**Configuration:**
+- Default WebSocket idle timeout: **0 seconds (infinite)**
+- Set via property: `-DJettyWebSocketIdleTimeout=300` (5 minutes)
+- Heartbeat interval should be less than idle timeout
+
+**Recommended setup for production:**
+- Idle timeout: 300 seconds (5 minutes)
+- Heartbeat interval: 120 seconds (2 minutes)
+
 ### Example: Echo Server
 
-See `com.webobjects.appserver.websocket.examples.EchoWebSocketHandler` for a complete working example.
+See `com.webobjects.appserver.websocket.examples.EchoWebSocketHandler` for a complete working example with heartbeat.

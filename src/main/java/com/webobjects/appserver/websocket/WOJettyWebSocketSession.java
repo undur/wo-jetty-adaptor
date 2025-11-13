@@ -8,84 +8,93 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.jetty.websocket.api.Session;
 
 /**
- * Jetty-specific implementation of WOWebSocketSession.
- * Wraps a Jetty WebSocket Session and provides the WO API.
+ * Wraps a Jetty WebSocket Session for our use
  */
+
 public class WOJettyWebSocketSession implements WOWebSocketSession {
 
-	private final Session jettySession;
-	private final Map<String, Object> attributes = new ConcurrentHashMap<>();
+	/**
+	 * The underlying Jetty session
+	 */
+	private final Session _jettySession;
+
+	/**
+	 * FIXME: We should really have a session object, or some other typed info associated with the session, rather than a simple Map // Hugi 2025-11-13
+	 */
+	private final Map<String, Object> _attributes = new ConcurrentHashMap<>();
 
 	public WOJettyWebSocketSession( Session jettySession ) {
-		this.jettySession = jettySession;
+		_jettySession = jettySession;
 	}
 
 	@Override
 	public boolean isOpen() {
-		return jettySession != null && jettySession.isOpen();
+		return _jettySession.isOpen();
 	}
 
 	@Override
 	public void sendText( String message ) throws IOException {
-		if( jettySession != null && jettySession.isOpen() ) {
-			jettySession.sendText( message, null );
-		}
-		else {
+
+		if( !isOpen() ) {
 			throw new IOException( "WebSocket session is not open" );
 		}
+
+		_jettySession.sendText( message, null );
 	}
 
 	@Override
 	public void sendBinary( ByteBuffer data ) throws IOException {
-		if( jettySession != null && jettySession.isOpen() ) {
-			jettySession.sendBinary( data, null );
-		}
-		else {
+
+		if( !isOpen() ) {
 			throw new IOException( "WebSocket session is not open" );
 		}
+
+		_jettySession.sendBinary( data, null );
 	}
 
 	@Override
 	public void close() throws IOException {
-		if( jettySession != null && jettySession.isOpen() ) {
-			jettySession.close();
+		if( isOpen() ) {
+			_jettySession.close();
 		}
 	}
 
 	@Override
 	public void close( int statusCode, String reason ) throws IOException {
-		if( jettySession != null && jettySession.isOpen() ) {
-			jettySession.close( statusCode, reason, null );
+		if( isOpen() ) {
+			_jettySession.close( statusCode, reason, null );
 		}
 	}
 
 	@Override
 	public String getRemoteAddress() {
-		if( jettySession != null && jettySession.getRemoteSocketAddress() != null ) {
-			return jettySession.getRemoteSocketAddress().toString();
+
+		if( _jettySession.getRemoteSocketAddress() != null ) {
+			return _jettySession.getRemoteSocketAddress().toString();
 		}
+
 		return "unknown";
 	}
 
 	@Override
 	public Object getAttribute( String key ) {
-		return attributes.get( key );
+		return _attributes.get( key );
 	}
 
 	@Override
 	public void setAttribute( String key, Object value ) {
-		attributes.put( key, value );
+		_attributes.put( key, value );
 	}
 
 	@Override
 	public void removeAttribute( String key ) {
-		attributes.remove( key );
+		_attributes.remove( key );
 	}
 
 	/**
 	 * @return the underlying Jetty session
 	 */
-	Session getJettySession() {
-		return jettySession;
+	Session jettySession() {
+		return _jettySession;
 	}
 }

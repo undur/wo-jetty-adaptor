@@ -11,31 +11,33 @@ import com.webobjects.appserver.WORequest;
 
 /**
  * Jetty WebSocket listener that delegates to a WOWebSocketHandler.
- * This bridges Jetty's WebSocket API to WebObjects' WebSocket API.
  */
+
 public class WOJettyWebSocketListener implements Session.Listener {
 
 	private static final Logger logger = LoggerFactory.getLogger( WOJettyWebSocketListener.class );
 
-	private final WOWebSocketHandler handler;
-	private final WORequest initialRequest;
-	private WOJettyWebSocketSession woSession;
+	private final WOWebSocketHandler _handler;
+	private final WORequest _initialRequest;
+	private WOJettyWebSocketSession _woWebSocketSession;
 
 	public WOJettyWebSocketListener( WOWebSocketHandler handler, WORequest initialRequest ) {
-		this.handler = handler;
-		this.initialRequest = initialRequest;
+		_handler = handler;
+		_initialRequest = initialRequest;
 	}
 
 	@Override
 	public void onWebSocketOpen( Session session ) {
-		woSession = new WOJettyWebSocketSession( session );
+		_woWebSocketSession = new WOJettyWebSocketSession( session );
+
 		try {
-			handler.onConnect( woSession, initialRequest );
+			_handler.onConnect( _woWebSocketSession, _initialRequest );
 		}
 		catch( Exception e ) {
 			logger.error( "Error in WebSocket onConnect handler", e );
-			handler.onError( woSession, e );
+			_handler.onError( _woWebSocketSession, e );
 		}
+
 		// Start demanding messages
 		session.demand();
 	}
@@ -43,27 +45,28 @@ public class WOJettyWebSocketListener implements Session.Listener {
 	@Override
 	public void onWebSocketText( String message ) {
 		try {
-			handler.onTextMessage( woSession, message );
+			_handler.onTextMessage( _woWebSocketSession, message );
 		}
 		catch( Exception e ) {
 			logger.error( "Error in WebSocket onTextMessage handler", e );
-			handler.onError( woSession, e );
+			_handler.onError( _woWebSocketSession, e );
 		}
+
 		// Demand more data for the next message
-		if( woSession != null && woSession.isOpen() ) {
-			woSession.getJettySession().demand();
+		if( _woWebSocketSession != null && _woWebSocketSession.isOpen() ) {
+			_woWebSocketSession.jettySession().demand();
 		}
 	}
 
 	@Override
 	public void onWebSocketBinary( ByteBuffer payload, Callback callback ) {
 		try {
-			handler.onBinaryMessage( woSession, payload );
+			_handler.onBinaryMessage( _woWebSocketSession, payload );
 			callback.succeed();
 		}
 		catch( Exception e ) {
 			logger.error( "Error in WebSocket onBinaryMessage handler", e );
-			handler.onError( woSession, e );
+			_handler.onError( _woWebSocketSession, e );
 			callback.fail( e );
 		}
 	}
@@ -71,7 +74,7 @@ public class WOJettyWebSocketListener implements Session.Listener {
 	@Override
 	public void onWebSocketClose( int statusCode, String reason ) {
 		try {
-			handler.onClose( woSession, statusCode, reason );
+			_handler.onClose( _woWebSocketSession, statusCode, reason );
 		}
 		catch( Exception e ) {
 			logger.error( "Error in WebSocket onClose handler", e );
@@ -81,7 +84,7 @@ public class WOJettyWebSocketListener implements Session.Listener {
 	@Override
 	public void onWebSocketError( Throwable cause ) {
 		try {
-			handler.onError( woSession, cause );
+			_handler.onError( _woWebSocketSession, cause );
 		}
 		catch( Exception e ) {
 			logger.error( "Error in WebSocket onError handler", e );

@@ -3,6 +3,7 @@ package com.webobjects.appserver.websocket.examples;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.webobjects.appserver.WORequest;
 import com.webobjects.appserver.websocket.WOWebSocketHandler;
 import com.webobjects.appserver.websocket.WOWebSocketSession;
 
@@ -38,17 +39,16 @@ import com.webobjects.appserver.websocket.WOWebSocketSession;
  * };
  * </pre>
  */
+
 public class EchoWebSocketHandler extends WOWebSocketHandler {
 
 	@Override
-	public void onConnect( WOWebSocketSession session, com.webobjects.appserver.WORequest request ) {
+	public void onConnect( WOWebSocketSession session, WORequest initiatingRequest ) {
+
 		logger.info( "WebSocket connected: {}", session.getRemoteAddress() );
 
-		// You now have access to the initial HTTP request!
-		// Examples:
-		// - String sessionId = request.cookieValueForKey("wosid");
-		// - String authToken = request.headerForKey("Authorization");
-		// - String userId = request.stringFormValueForKey("userId");
+		// Start a heartbeat to keep the connection alive (send "ping" every 2 minutes)
+		startHeartbeat( session, 120 );
 
 		// Send a welcome message
 		try {
@@ -61,6 +61,13 @@ public class EchoWebSocketHandler extends WOWebSocketHandler {
 
 	@Override
 	public void onTextMessage( WOWebSocketSession session, String message ) {
+
+		// Filter out heartbeat messages
+		if( isHeartbeatMessage( session, message ) ) {
+			logger.debug( "Received heartbeat: {}", message );
+			return;
+		}
+
 		logger.debug( "Received text message: {}", message );
 
 		// Echo the message back with a prefix
@@ -89,6 +96,8 @@ public class EchoWebSocketHandler extends WOWebSocketHandler {
 	@Override
 	public void onClose( WOWebSocketSession session, int statusCode, String reason ) {
 		logger.info( "WebSocket closed: {} (status={}, reason={})", session.getRemoteAddress(), statusCode, reason );
+		// Heartbeat is automatically stopped when connection closes
+		stopHeartbeat( session );
 	}
 
 	@Override
