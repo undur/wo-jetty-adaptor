@@ -1,7 +1,6 @@
 package com.webobjects.appserver;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -179,10 +178,10 @@ public class WOAdaptorJetty extends WOAdaptor {
 				Content.copy( cs, jettyResponse, callback );
 			}
 			else {
+				jettyResponse.getHeaders().put( "content-length", String.valueOf( woResponse.content().length() ) );
+
 				try( final OutputStream out = Content.Sink.asOutputStream( jettyResponse )) {
-					final long contentLength = woResponse.content()._bytesNoCopy().length;
-					jettyResponse.getHeaders().put( "content-length", String.valueOf( contentLength ) );
-					new ByteArrayInputStream( woResponse.content()._bytesNoCopy() ).transferTo( out );
+					woResponse.content().writeToStream( out );
 					callback.succeeded();
 				}
 			}
