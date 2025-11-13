@@ -115,6 +115,13 @@ public class WOAdaptorJetty extends WOAdaptor {
 		final Server server = new Server();
 
 		final HttpConfiguration config = new HttpConfiguration();
+		// Configure output buffer sizes for optimal performance
+		// outputBufferSize: Size of buffer for aggregating response content (default: 32KB)
+		// outputAggregationSize: Max size of writes copied into buffer (default: 8KB)
+		// Larger buffers improve throughput but increase memory usage and may add latency
+		config.setOutputBufferSize( 32768 ); // 32 KB - good balance for most responses
+		config.setOutputAggregationSize( 8192 ); // 8 KB - aggregate small writes efficiently
+
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
 		final ServerConnector connector = new ServerConnector( server, connectionFactory );
@@ -180,7 +187,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 			else {
 				jettyResponse.getHeaders().put( "content-length", String.valueOf( woResponse.content().length() ) );
 
-				try( final OutputStream out = Content.Sink.asOutputStream( jettyResponse )) {
+				try( final OutputStream out = Response.asBufferedOutputStream( jettyRequest, jettyResponse )) {
 					woResponse.content().writeToStream( out );
 					callback.succeeded();
 				}
