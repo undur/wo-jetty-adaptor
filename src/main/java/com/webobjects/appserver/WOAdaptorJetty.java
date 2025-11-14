@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.eclipse.jetty.http.HttpField;
-import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.ConnectionMetaData;
 import org.eclipse.jetty.server.Handler;
@@ -123,16 +122,9 @@ public class WOAdaptorJetty extends WOAdaptor {
 		config.setOutputBufferSize( 32768 ); // 32 KB - good balance for most responses
 		config.setOutputAggregationSize( 8192 ); // 8 KB - aggregate small writes efficiently
 
-		// HTTP/1.1 connection factory
-		final HttpConnectionFactory http1 = new HttpConnectionFactory( config );
+		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
-		// HTTP/2 cleartext (h2c) connection factory
-		// This allows HTTP/2 without TLS, perfect for internal communication with proxies like Modulo
-		final HTTP2CServerConnectionFactory h2c = new HTTP2CServerConnectionFactory( config );
-
-		// Connector supports both HTTP/1.1 and HTTP/2 cleartext
-		// Clients can upgrade from HTTP/1.1 to h2c, or connect directly with h2c
-		final ServerConnector connector = new ServerConnector( server, http1, h2c );
+		final ServerConnector connector = new ServerConnector( server, connectionFactory );
 		connector.setPort( _port );
 		server.addConnector( connector );
 
