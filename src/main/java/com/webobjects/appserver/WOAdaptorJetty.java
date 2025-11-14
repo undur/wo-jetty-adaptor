@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.ConnectionMetaData;
@@ -115,12 +116,9 @@ public class WOAdaptorJetty extends WOAdaptor {
 		final Server server = new Server();
 
 		final HttpConfiguration config = new HttpConfiguration();
-		// Configure output buffer sizes for optimal performance
-		// outputBufferSize: Size of buffer for aggregating response content (default: 32KB)
-		// outputAggregationSize: Max size of writes copied into buffer (default: 8KB)
-		// Larger buffers improve throughput but increase memory usage and may add latency
-		config.setOutputBufferSize( 32768 ); // 32 KB - good balance for most responses
-		config.setOutputAggregationSize( 8192 ); // 8 KB - aggregate small writes efficiently
+
+		// FIXME: Temporarily allow duplicate host headers // Hugi 2025-11-14
+		config.setHttpCompliance( HttpCompliance.from( "RFC7230,DUPLICATE_HOST_HEADERS" ) );
 
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
