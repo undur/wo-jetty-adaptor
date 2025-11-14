@@ -120,6 +120,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 		config.addCustomizer( ( request, responseHeaders ) -> {
 			final List<String> hostHeaders = request.getHeaders().getValuesList( "Host" );
 
+			System.out.println( "Headers: " + hostHeaders );
+
 			// If we have multiple Host headers, find the first non-empty one
 			if( hostHeaders.size() > 1 ) {
 				String correctHost = null;
