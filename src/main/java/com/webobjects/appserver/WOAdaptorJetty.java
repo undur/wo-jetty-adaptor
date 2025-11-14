@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.ConnectionMetaData;
@@ -116,9 +115,6 @@ public class WOAdaptorJetty extends WOAdaptor {
 		final Server server = new Server();
 
 		final HttpConfiguration config = new HttpConfiguration();
-
-		// FIXME: Temporarily allow duplicate host headers // Hugi 2025-11-14
-		config.setHttpCompliance( HttpCompliance.from( "RFC7230,DUPLICATE_HOST_HEADERS" ) );
 
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
