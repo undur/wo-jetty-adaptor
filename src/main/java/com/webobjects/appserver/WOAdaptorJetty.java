@@ -117,6 +117,11 @@ public class WOAdaptorJetty extends WOAdaptor {
 		final HttpConfiguration config = new HttpConfiguration();
 
 		// FIXME: Hack to handle multiple incoming Host headers. We pick the first non-empty one and use that // Hugi 2025-11-14
+
+		// Allow duplicate Host headers so we can fix them in the customizer
+		// Without this, Jetty rejects the request before the customizer runs
+		config.setHttpCompliance( org.eclipse.jetty.http.HttpCompliance.from( "RFC7230,DUPLICATE_HOST_HEADERS" ) );
+
 		config.addCustomizer( ( request, responseHeaders ) -> {
 			final List<String> hostHeaders = request.getHeaders().getValuesList( "Host" );
 
@@ -147,6 +152,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			return request;
 		} );
+
+		// FIXME: End hack to handle multiple incoming Host headers // Hugi 2025-11-14
 
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
