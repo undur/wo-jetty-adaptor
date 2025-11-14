@@ -116,6 +116,36 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 		final HttpConfiguration config = new HttpConfiguration();
 
+		// FIXME: Hack to handle multiple incoming Host headers. We pick the first non-empty one and use that // Hugi 2025-11-14
+		config.addCustomizer( ( request, responseHeaders ) -> {
+			final List<String> hostHeaders = request.getHeaders().getValuesList( "Host" );
+
+			// If we have multiple Host headers, find the first non-empty one
+			if( hostHeaders.size() > 1 ) {
+				String correctHost = null;
+				for( String host : hostHeaders ) {
+					if( host != null && !host.isEmpty() ) {
+						correctHost = host;
+						break;
+					}
+				}
+
+				// If we found a non-empty host but the current URI has an empty/null host, rebuild
+				if( correctHost != null ) {
+					final org.eclipse.jetty.http.HttpURI currentURI = request.getHttpURI();
+					if( currentURI.getHost() == null || currentURI.getHost().isEmpty() ) {
+						// Rebuild URI with correct host
+						final org.eclipse.jetty.http.HttpURI newURI = org.eclipse.jetty.http.HttpURI.build( currentURI )
+								.authority( correctHost, currentURI.getPort() )
+								.asImmutable();
+						return Request.serveAs( request, newURI );
+					}
+				}
+			}
+
+			return request;
+		} );
+
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
 		final ServerConnector connector = new ServerConnector( server, connectionFactory );
