@@ -115,46 +115,6 @@ public class WOAdaptorJetty extends WOAdaptor {
 		final Server server = new Server();
 
 		final HttpConfiguration config = new HttpConfiguration();
-
-		// FIXME: Hack to handle multiple incoming Host headers. We pick the first non-empty one and use that // Hugi 2025-11-14
-
-		// Allow duplicate Host headers so we can fix them in the customizer
-		// Without this, Jetty rejects the request before the customizer runs
-		config.setHttpCompliance( org.eclipse.jetty.http.HttpCompliance.from( "RFC7230,DUPLICATE_HOST_HEADERS" ) );
-
-		config.addCustomizer( ( request, responseHeaders ) -> {
-			final List<String> hostHeaders = request.getHeaders().getValuesList( "Host" );
-
-			System.out.println( "Headers: " + hostHeaders );
-
-			// If we have multiple Host headers, find the first non-empty one
-			if( hostHeaders.size() > 1 ) {
-				String correctHost = null;
-				for( String host : hostHeaders ) {
-					if( host != null && !host.isEmpty() ) {
-						correctHost = host;
-						break;
-					}
-				}
-
-				// If we found a non-empty host but the current URI has an empty/null host, rebuild
-				if( correctHost != null ) {
-					final org.eclipse.jetty.http.HttpURI currentURI = request.getHttpURI();
-					if( currentURI.getHost() == null || currentURI.getHost().isEmpty() ) {
-						// Rebuild URI with correct host
-						final org.eclipse.jetty.http.HttpURI newURI = org.eclipse.jetty.http.HttpURI.build( currentURI )
-								.authority( correctHost, currentURI.getPort() )
-								.asImmutable();
-						return Request.serveAs( request, newURI );
-					}
-				}
-			}
-
-			return request;
-		} );
-
-		// FIXME: End hack to handle multiple incoming Host headers // Hugi 2025-11-14
-
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
 		final ServerConnector connector = new ServerConnector( server, connectionFactory );
