@@ -206,16 +206,20 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			final NSData contentData;
 
-			final int length = (int)jettyRequest.getLength();
+			final long length = jettyRequest.getLength();
 
 			if( length > 0 ) {
-				logger.info( "Constructing streaming request content with length: " + length );
+
+				// FIXME: Missing support for larger request bodies (limitations in WONoCopyPushbackInputStream and WOInputStreamData) // Hugi 2025-11-15
+				if( length > Integer.MAX_VALUE ) {
+					throw new IllegalArgumentException( "Content request length %s exceeds the size of an int. Unfortunately, we currently can't handle that".formatted( length ) );
+				}
 
 				// All of this stream wrapping is required for WO to be happy. Yay!
 				final InputStream jettyStream = Request.asInputStream( jettyRequest );
 				final InputStream bufferedStream = new BufferedInputStream( jettyStream );
-				final WONoCopyPushbackInputStream wrappedStream = new WONoCopyPushbackInputStream( bufferedStream, length );
-				contentData = new WOInputStreamData( wrappedStream, length );
+				final WONoCopyPushbackInputStream wrappedStream = new WONoCopyPushbackInputStream( bufferedStream, (int)length );
+				contentData = new WOInputStreamData( wrappedStream, (int)length );
 			}
 			else {
 				contentData = NSData.EmptyData;
