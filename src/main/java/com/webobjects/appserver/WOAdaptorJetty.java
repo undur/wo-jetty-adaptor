@@ -65,20 +65,26 @@ public class WOAdaptorJetty extends WOAdaptor {
 		super( name, config );
 		_port = port( config );
 
-		checkPortAvailable( _port );
-
-		// Set-The-Port-Stuff copied from the WONettyAdaptor, feels a little dirty
-		WOApplication.application()._setHost( InetAddress.getLocalHost().getHostName() );
-		System.setProperty( WOProperties._PortKey, Integer.toString( _port ) );
+		if( _port != 0 ) {
+			checkPortAvailable( _port );
+		}
 	}
 
 	/**
-	 * @return the port we'll be listening on
+	 * Overridden, since WO will invoke this method when constructing a direct connect URL
+	 */
+	@Override
+	public int port() {
+		return _port;
+	}
+
+	/**
+	 * @return The port we'll be listening on. 0 (zero) if no port set, meaning Jetty will pick a random port
 	 */
 	private static int port( NSDictionary<String, Object> config ) {
-		final Number number = (Number)config.objectForKey( WOProperties._PortKey );
-
 		int port = 0;
+
+		final Number number = (Number)config.objectForKey( WOProperties._PortKey );
 
 		if( number != null ) {
 			port = number.intValue();
@@ -130,6 +136,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 		final ServerConnector connector = new ServerConnector( _server, connectionFactory );
 		connector.setPort( _port );
+		// connector.setHost( null ); // FIXME: Should we also set the host from WOHost here, if set? // Hugi 2025-11-15
 		_server.addConnector( connector );
 
 		Handler handler = new WOJettyHandler();
@@ -142,8 +149,18 @@ public class WOAdaptorJetty extends WOAdaptor {
 		_server.setHandler( handler );
 
 		try {
-			logger.info( "Starting %s on port %s".formatted( getClass().getSimpleName(), _port ) );
+			logger.info( "%s starting %s".formatted( getClass().getSimpleName(), _port == 0 ? "on a random port" : String.valueOf( _port ) ) );
+
 			_server.start();
+
+			if( _port == 0 ) {
+				_port = connector.getLocalPort();
+				System.setProperty( WOProperties._PortKey, Integer.toString( _port ) );
+				logger.info( "Running on port %s".formatted( _port ) );
+			}
+
+			// FIXME: Once again, do we actually need this? Copied from Netty. Does WOHost figure into this? // Hugi 2025-11-15
+			WOApplication.application()._setHost( InetAddress.getLocalHost().getHostName() );
 		}
 		catch( final Exception e ) {
 			e.printStackTrace();
