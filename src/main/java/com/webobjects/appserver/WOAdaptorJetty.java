@@ -133,6 +133,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 		_server = new Server();
 
 		final HttpConfiguration config = new HttpConfiguration();
+		config.setSendServerVersion( false ); // Not sending the server software/version is good practice for security
+
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
 		final ServerConnector connector = new ServerConnector( _server, connectionFactory );
