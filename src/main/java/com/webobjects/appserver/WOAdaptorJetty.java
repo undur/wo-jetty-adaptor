@@ -150,7 +150,14 @@ public class WOAdaptorJetty extends WOAdaptor {
 			final WOResponse woResponse = WOApplication.application().dispatchRequest( woRequest );
 
 			jettyResponse.setStatus( woResponse.status() );
-			copyHeadersFromWOResponseToJettyResponse( woResponse, jettyResponse );
+
+			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
+				final String headerName = entry.getKey();
+
+				for( String headerValue : entry.getValue() ) {
+					jettyResponse.getHeaders().add( headerName, headerValue );
+				}
+			}
 
 			if( woResponse.contentInputStream() != null ) {
 				final long contentLength = woResponse.contentInputStreamLength(); // If an InputStream is present, the stream's length must be present as well
@@ -176,35 +183,6 @@ public class WOAdaptorJetty extends WOAdaptor {
 				}
 
 				callback.succeeded();
-			}
-		}
-
-		/**
-		 * Copies headers from WOResponse to Jetty Response, with special handling for Set-Cookie headers.
-		 *
-		 * WebObjects has a bug where it combines multiple Set-Cookie headers into a single comma-separated string.
-		 * This breaks cookie parsing in browsers, so we split them back into separate headers.
-		 */
-		private static void copyHeadersFromWOResponseToJettyResponse( final WOResponse woResponse, final Response jettyResponse ) {
-			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
-				final String headerName = entry.getKey();
-
-				if( headerName.equalsIgnoreCase( "set-cookie" ) ) {
-					// Split combined Set-Cookie headers back into individual cookies
-					for( String cookieValue : entry.getValue() ) {
-						// Split on commas that are followed by a cookie name (identified by "name=" pattern)
-						// The regex: comma + optional whitespace + lookahead for "word-chars followed by ="
-						// Example: "cookie1=val; path=/, cookie2=val; path=/" splits into two cookies
-						String[] individualCookies = cookieValue.split( ",\\s*(?=[^;,]*=)" );
-						for( String individualCookie : individualCookies ) {
-							jettyResponse.getHeaders().add( headerName, individualCookie.trim() );
-						}
-					}
-				}
-				else {
-					// For all other headers, add the array as-is
-					jettyResponse.getHeaders().add( headerName, entry.getValue() );
-				}
 			}
 		}
 
