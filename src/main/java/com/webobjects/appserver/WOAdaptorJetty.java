@@ -64,9 +64,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 		super( name, config );
 		_port = port( config );
 
-		if( _port != 0 ) {
-			checkPortAvailable( _port );
-		}
+		checkPortAvailable( _port );
 	}
 
 	/**
@@ -100,9 +98,13 @@ public class WOAdaptorJetty extends WOAdaptor {
 	 * Briefly try binding to the requested port. If unsuccessful, emulate WO's behaviour (wrap the BindException in NSForwardException) to help ERXApplication catch it and stop any apps occupying the port
 	 */
 	private static void checkPortAvailable( final int port ) {
-		try( ServerSocket socket = new ServerSocket( port )) {}
-		catch( IOException e ) {
-			throw new NSForwardException( e );
+
+		// Port 0 just means "WOPort not set", so we don't need to perform a check (Jetty will pick a random free port)
+		if( port != 0 ) {
+			try( ServerSocket socket = new ServerSocket( port )) {}
+			catch( IOException e ) {
+				throw new NSForwardException( e );
+			}
 		}
 	}
 
