@@ -192,7 +192,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 			final String method = jettyRequest.getMethod();
 			final String uri = jettyRequest.getHttpURI().getPathQuery();
 			final String httpVersion = md.getHttpVersion().asString();
-			final Map<String, List<String>> headers = headerMap( jettyRequest );
+			final Map<String, List<String>> headers = headerMapFromJettyRequest( jettyRequest );
 
 			final NSData contentData;
 
@@ -237,7 +237,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 		/**
 		 * @return The headers from the Request as a Map
 		 */
-		private static Map<String, List<String>> headerMap( final Request jettyRequest ) {
+		private static Map<String, List<String>> headerMapFromJettyRequest( final Request jettyRequest ) {
 			final Map<String, List<String>> map = new HashMap<>();
 
 			for( final HttpField httpField : jettyRequest.getHeaders() ) {
