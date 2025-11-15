@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -57,12 +56,9 @@ public class WOAdaptorJetty extends WOAdaptor {
 		super( name, config );
 		_port = port( config );
 
-		// If the port is occupied, we emulate WO's behaviour. Helps ERXApplication handle the exception, restarting any app occupying the port
-		if( !isPortAvailable( _port ) ) {
-			throw new NSForwardException( new BindException( "Port %s is occupied".formatted( _port ) ) );
-		}
+		checkPortAvailable( _port );
 
-		// Copied from the Netty adaptor
+		// Set-The-Port-Stuff copied from the WONettyAdaptor, feels a little dirty
 		WOApplication.application()._setHost( InetAddress.getLocalHost().getHostName() );
 		System.setProperty( WOProperties._PortKey, Integer.toString( _port ) );
 	}
@@ -87,14 +83,12 @@ public class WOAdaptorJetty extends WOAdaptor {
 	}
 
 	/**
-	 * @return true if the given port is available for us to use
+	 * Briefly try binding to the requested port. If unsuccessful, emulate WO's behaviour (wrap the BindException in NSForwardException) to help ERXApplication catch it and stop any apps occupying the port
 	 */
-	private static boolean isPortAvailable( int port ) {
-		try( ServerSocket socket = new ServerSocket( port )) {
-			return true;
-		}
+	private static void checkPortAvailable( final int port ) {
+		try( ServerSocket socket = new ServerSocket( port )) {}
 		catch( IOException e ) {
-			return false;
+			throw new NSForwardException( e );
 		}
 	}
 
