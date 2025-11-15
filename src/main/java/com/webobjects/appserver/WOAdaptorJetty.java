@@ -46,8 +46,17 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 	private static final Logger logger = LoggerFactory.getLogger( WOAdaptorJetty.class );
 
-	// FIXME: This should eventually be configurable // Hugi 2025-11-13
+	/**
+	 * Flip this to turn websockets on/off
+	 *
+	 *  FIXME: This should be configurable in a nicer way // Hugi 2025-11-13
+	 */
 	private static final boolean ENABLE_WEBSOCKETS = true;
+
+	/**
+	 * The Jetty server instance
+	 */
+	private Server _server;
 
 	/**
 	 * Invoked by WO to construct an adaptor instance
@@ -99,34 +108,42 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 	@Override
 	public void unregisterForEvents() {
-		// FIXME: Missing implementation // Hugi 2025-11-11
-		logger.error( "We haven't implemented WOAdaptor.unregisterForEvents()" );
+		logger.info( "Stopping %s".formatted( getClass().getSimpleName() ) );
+
+		try {
+			_server.stop();
+		}
+		catch( Exception e ) {
+			logger.error( "Error stopping server", e );
+			// Wrapping in RuntimeException always feels a little dirty, but I think it's nicer than no handling at all
+			throw new RuntimeException( e );
+		}
 	}
 
 	@Override
 	public void registerForEvents() {
 
-		final Server server = new Server();
+		_server = new Server();
 
 		final HttpConfiguration config = new HttpConfiguration();
 		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
 
-		final ServerConnector connector = new ServerConnector( server, connectionFactory );
+		final ServerConnector connector = new ServerConnector( _server, connectionFactory );
 		connector.setPort( _port );
-		server.addConnector( connector );
+		_server.addConnector( connector );
 
 		Handler handler = new WOJettyHandler();
 
 		// If websockets are enabled, we wrap the handler with WS upgrade capabilities
 		if( ENABLE_WEBSOCKETS ) {
-			handler = WOJettyWebSocketSupport.createWebSocketHandler( server, handler );
+			handler = WOJettyWebSocketSupport.createWebSocketHandler( _server, handler );
 		}
 
-		server.setHandler( handler );
+		_server.setHandler( handler );
 
 		try {
 			logger.info( "Starting %s on port %s".formatted( getClass().getSimpleName(), _port ) );
-			server.start();
+			_server.start();
 		}
 		catch( final Exception e ) {
 			e.printStackTrace();
@@ -151,12 +168,12 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			jettyResponse.setStatus( woResponse.status() );
 
-			// Note. We originally added headers using the following logic, adding all the header values to a single header.
-			// jettyResponse.getHeaders().add( entry.getKey(), entry.getValue() );
-			// However, this makes Jetty combine the values for each header in the response, using comma separated values.
-			// This is fine for most headers, but it breaks the set-cookie header. Each set-cookie header should be a single header (not joined values)
+			// Note: You'd think you could add each header using the following logic, adding all the header values at the same time:
+			// 		jettyResponse.getHeaders().add( entry.getKey(), entry.getValue() );
+			// However, using this method, Jetty will construct a single header and put all the values into a comma separated list.
+			// This is fine for most headers - but it breaks the set-cookie header since each cookie must get it's own set-cookie header.
 			// https://datatracker.ietf.org/doc/html/rfc6265#section-3
-			// For this reason, we append each header value as a separate header (which should be fine)
+			// For this reason, we add each header value in a separate header (which is fine anyway)
 			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
 				final String headerName = entry.getKey();
 
