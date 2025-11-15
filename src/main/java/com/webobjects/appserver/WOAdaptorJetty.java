@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
@@ -136,7 +135,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 		final ServerConnector connector = new ServerConnector( _server, connectionFactory );
 		connector.setPort( _port );
-		// connector.setHost( null ); // FIXME: Should we also set the host from WOHost here, if set? // Hugi 2025-11-15
+		// connector.setHost( null ); // FIXME: WOHost? // Hugi 2025-11-15
 		_server.addConnector( connector );
 
 		Handler handler = new WOJettyHandler();
@@ -159,8 +158,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 				logger.info( "Running on port %s".formatted( _port ) );
 			}
 
-			// FIXME: Once again, do we actually need this? Copied from Netty. Does WOHost figure into this? // Hugi 2025-11-15
-			WOApplication.application()._setHost( InetAddress.getLocalHost().getHostName() );
+			// FIXME: WOHost? // Hugi 2025-11-15
+			// WOApplication.application()._setHost( InetAddress.getLocalHost().getHostName() );
 		}
 		catch( final Exception e ) {
 			e.printStackTrace();
@@ -244,7 +243,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			if( length > 0 ) {
 
-				// FIXME: Missing support for larger request bodies (limitations in WONoCopyPushbackInputStream and WOInputStreamData) // Hugi 2025-11-15
+				// FIXME: Missing support for larger request bodies (limitations imposed by WONoCopyPushbackInputStream and WOInputStreamData) // Hugi 2025-11-15
 				if( length > Integer.MAX_VALUE ) {
 					throw new IllegalArgumentException( "Content request length %s exceeds the size of an int. Unfortunately, we currently can't handle that".formatted( length ) );
 				}
