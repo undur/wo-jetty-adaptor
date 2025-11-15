@@ -151,6 +151,12 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			jettyResponse.setStatus( woResponse.status() );
 
+			// Note. We originally added headers using the following logic, adding all the header values to a single header.
+			// jettyResponse.getHeaders().add( entry.getKey(), entry.getValue() );
+			// However, this makes Jetty combine the values for each header in the response, using comma separated values.
+			// This is fine for most headers, but it breaks the set-cookie header. Each set-cookie header should be a single header (not joined values)
+			// https://datatracker.ietf.org/doc/html/rfc6265#section-3
+			// For this reason, we append each header value as a separate header (which should be fine)
 			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
 				final String headerName = entry.getKey();
 
