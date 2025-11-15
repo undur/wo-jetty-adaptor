@@ -149,7 +149,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 		_server.setHandler( handler );
 
 		try {
-			logger.info( "%s starting %s".formatted( getClass().getSimpleName(), _port == 0 ? "on a random port" : String.valueOf( _port ) ) );
+			logger.info( "%s starting %s".formatted( getClass().getSimpleName(), _port == 0 ? "on a random port" : "on port " + _port ) );
 
 			_server.start();
 
