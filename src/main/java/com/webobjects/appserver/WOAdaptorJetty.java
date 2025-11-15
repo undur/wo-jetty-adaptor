@@ -186,16 +186,17 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			jettyResponse.setStatus( woResponse.status() );
 
-			// Note: You'd think you could add each header using the following logic, adding all the header values at the same time:
-			// 		jettyResponse.getHeaders().add( entry.getKey(), entry.getValue() );
-			// However, using this method, Jetty will construct a single header and put all the values into a comma separated list.
-			// This is fine for most headers - but it breaks the set-cookie header since each cookie must get it's own set-cookie header.
-			// https://datatracker.ietf.org/doc/html/rfc6265#section-3
-			// For this reason, we add each header value in a separate header (which is fine anyway)
 			for( final Entry<String, NSArray<String>> entry : woResponse.headers().entrySet() ) {
 				final String headerName = entry.getKey();
+				final NSArray<String> headerValues = entry.getValue();
 
-				for( String headerValue : entry.getValue() ) {
+				// Note: You'd think you could copy add each header using the following logic, adding all the header values at the same time:
+				// 		jettyResponse.getHeaders().add( headerName, headerValues );
+				// However, using this method, Jetty will construct a single header and put all the values into a comma separated list.
+				// This is fine for most headers - but it breaks the set-cookie header since each cookie must get it's own set-cookie header.
+				// https://datatracker.ietf.org/doc/html/rfc6265#section-3
+				// For this reason, we add the header values one at a time, each in it's own separate header (which is fine anyway)
+				for( final String headerValue : headerValues ) {
 					jettyResponse.getHeaders().add( headerName, headerValue );
 				}
 			}
