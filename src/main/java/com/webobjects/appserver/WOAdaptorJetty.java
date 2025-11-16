@@ -121,9 +121,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 			_server.stop();
 		}
 		catch( Exception e ) {
-			logger.error( "Error stopping server", e );
 			// Wrapping in RuntimeException always feels a little dirty, but I think it's nicer than no handling at all
-			throw new RuntimeException( e );
+			throw new RuntimeException( "Error stopping server", e );
 		}
 	}
 
