@@ -254,7 +254,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 				// FIXME: Missing support for larger request bodies (limitations imposed by WONoCopyPushbackInputStream and WOInputStreamData) // Hugi 2025-11-15
 				if( length > Integer.MAX_VALUE ) {
-					throw new IllegalArgumentException( "Content request length %s exceeds the size of an int. Unfortunately, we currently can't handle that".formatted( length ) );
+					throw new IllegalArgumentException( "Request content length %s exceeds the size of an int. Unfortunately, we currently can't handle that".formatted( length ) );
 				}
 
 				// All of this stream wrapping is required for WO to be happy. Yay!
