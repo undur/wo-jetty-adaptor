@@ -129,26 +129,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 	@Override
 	public void registerForEvents() {
 
-		_server = new Server();
-
-		final HttpConfiguration config = new HttpConfiguration();
-		config.setSendServerVersion( false ); // Not sending the server software/version is good practice for security
-
-		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
-
-		final ServerConnector connector = new ServerConnector( _server, connectionFactory );
-		connector.setPort( _port );
-		// connector.setHost( null ); // FIXME: WOHost? // Hugi 2025-11-15
-		_server.addConnector( connector );
-
-		Handler handler = new WOJettyHandler();
-
-		// If websockets are enabled, we wrap the handler with WS upgrade capabilities
-		if( ENABLE_WEBSOCKETS ) {
-			handler = WOJettyWebSocketSupport.createWebSocketHandler( _server, handler );
-		}
-
-		_server.setHandler( handler );
+		_server = createJettyServer();
 
 		try {
 			logger.info( "%s starting %s".formatted( getClass().getSimpleName(), _port == 0 ? "on a random port" : "on port " + _port ) );
@@ -156,6 +137,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 			_server.start();
 
 			if( _port == 0 ) {
+				// FIXME: We probably need to check if the connector is a ServerConnector. Or if the server has any connectors at all // Hugi 2025-11-16
+				final ServerConnector connector = (ServerConnector)_server.getConnectors()[0];
 				_port = connector.getLocalPort();
 				WOApplication.application().setPort( _port );
 				logger.info( "Running on port %s".formatted( _port ) );
@@ -168,6 +151,52 @@ public class WOAdaptorJetty extends WOAdaptor {
 			e.printStackTrace();
 			System.exit( -1 );
 		}
+	}
+
+	/**
+	 * Interface that can be implemented by the Application class to create the actual Jetty server instance
+	 */
+	public interface JettyServerProvider {
+		public Server createJettyServer( int port );
+	}
+
+	/**
+	 * @return The Jetty Server instance that we'll use to serve requests
+	 */
+	public Server createJettyServer() {
+		if( WOApplication.application() instanceof JettyServerProvider jsp ) {
+			return jsp.createJettyServer( _port );
+		}
+
+		return createDefaultJettyServer( _port );
+	}
+
+	/**
+	 * @return Our default way of constructing a server, if the user doesn't provide his own
+	 */
+	private static Server createDefaultJettyServer( int port ) {
+		Server server = new Server();
+
+		final HttpConfiguration config = new HttpConfiguration();
+		config.setSendServerVersion( false ); // Not sending the server software/version is good practice for security
+
+		final HttpConnectionFactory connectionFactory = new HttpConnectionFactory( config );
+
+		final ServerConnector connector = new ServerConnector( server, connectionFactory );
+		connector.setPort( port );
+		// connector.setHost( null ); // FIXME: WOHost? // Hugi 2025-11-15
+		server.addConnector( connector );
+
+		Handler handler = new WOJettyHandler();
+
+		// If websockets are enabled, we wrap the handler with WS upgrade capabilities
+		if( ENABLE_WEBSOCKETS ) {
+			handler = WOJettyWebSocketSupport.createWebSocketHandler( server, handler );
+		}
+
+		server.setHandler( handler );
+
+		return server;
 	}
 
 	public static class WOJettyHandler extends Handler.Abstract {
