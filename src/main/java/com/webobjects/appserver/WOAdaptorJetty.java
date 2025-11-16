@@ -157,7 +157,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			if( _port == 0 ) {
 				_port = connector.getLocalPort();
-				System.setProperty( WOProperties._PortKey, Integer.toString( _port ) );
+				WOApplication.application().setPort( _port );
 				logger.info( "Running on port %s".formatted( _port ) );
 			}
 
