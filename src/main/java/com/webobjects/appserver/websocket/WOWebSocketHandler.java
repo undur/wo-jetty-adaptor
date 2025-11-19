@@ -42,7 +42,7 @@ public abstract class WOWebSocketHandler {
 	/**
 	 * Logger for this handler. Subclasses can use this for logging.
 	 */
-	protected final Logger logger = LoggerFactory.getLogger( getClass() );
+	private final Logger logger = LoggerFactory.getLogger( getClass() );
 
 	/**
 	 * The WOApplication instance that this handler is associated with

@@ -3,6 +3,9 @@ package com.webobjects.appserver.websocket.examples;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.webobjects.appserver.WORequest;
 import com.webobjects.appserver.websocket.WOWebSocketHandler;
 import com.webobjects.appserver.websocket.WOWebSocketSession;
@@ -41,6 +44,8 @@ import com.webobjects.appserver.websocket.WOWebSocketSession;
  */
 
 public class EchoWebSocketHandler extends WOWebSocketHandler {
+
+	private static final Logger logger = LoggerFactory.getLogger( EchoWebSocketHandler.class );
 
 	@Override
 	public void onConnect( WOWebSocketSession session, WORequest initiatingRequest ) {
