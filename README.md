@@ -1,4 +1,4 @@
-## 🔌 wo-jetty-adaptor
+## 🔌 wo-adaptor-jetty
 
 A Jetty-based WOAdaptor. Uses Jetty's servlet-free APIs meaning it's relatively lightweigt.
 
@@ -14,7 +14,7 @@ Build/install, add as a dependency to your application and pass in the argument 
 ```xml
 <dependency>
 	<groupId>is.rebbi</groupId>
-	<artifactId>wo-jetty-adaptor</artifactId>
+	<artifactId>wo-adaptor-jetty</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 </dependency>
 ```
@@ -51,7 +51,7 @@ Transfer rate:          3388922.70 [Kbytes/sec] received
 
 ## WebSockets
 
-wo-jetty-adaptor includes experimental WebSocket support.
+wo-adaptor-jetty includes experimental WebSocket support.
 
 ### Quick Start
 
