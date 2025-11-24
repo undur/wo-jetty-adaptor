@@ -1,15 +1,16 @@
 ## 🔌 wo-adaptor-jetty
 
-A Jetty-based WOAdaptor. Uses Jetty's servlet-free APIs meaning it's relatively lightweigt.
+A Jetty-based WOAdaptor. Based on Jetty's own servlet-free APIs meaning it's relatively simple and lightweigt.
 
 ## Why?
 
 * I want websockets.
-* The default adaptor for `ng-objects` is Jetty-based, so a Jetty-based `WOAdaptor` theoretically allows me to serve `WO` and `ng` from the same application / jetty server instance. _And_ I can share the WebSockets logic between frameworks.
+* I like having control over the HTTP-serving part of my applications.
+* The default adaptor for `ng-objects` is Jetty-based meaning a Jetty-based `WOAdaptor` will allow me to serve `WO` and `ng` from the same application / jetty server instance. _And_ I can share WebSocket logic between frameworks.
 
 ## Usage
 
-Build/install, add as a dependency to your application and pass in the argument `-WOAdaptor WOAdaptorJetty`
+Build/install and add as a dependency to your application. Then pass the launch argument `-WOAdaptor WOAdaptorJetty` to your application.
 
 ```xml
 <dependency>
@@ -19,9 +20,9 @@ Build/install, add as a dependency to your application and pass in the argument 
 </dependency>
 ```
 
-## Does this actually work?
+## Does this work?
 
-Yes. Since November 12. 2025 it's been deployed on a couple of sites, some of which see quite a bit of traffic.
+Yes. Very very well. Since November 15th 2025 I've used it in every single one of my applications, some of which handle quite some traffic, large file uploads, multipart request handling etc.
 
 ## Performance
 
@@ -31,9 +32,7 @@ Running the following locally on my MacBook M4 to serve a simple ~230kb applicat
 ab -k -n 10000 -c 16 http://127.0.0.1:1200/Apps/WebObjects/Hugi.woa/res/app/ZillaSlab-Light.ttf
 ```
 
-Returns the following results. So pretty great I'd say.
-
-Disabling `KeepAlive` (removing the `-k` parameter) slows us down by ~50%.
+Returns the following results. So pretty great I'd say. Disabling `KeepAlive` (removing the `-k` parameter) slows us down by about a half which is probably a more realistic benchmark, since it's rare for clients to make 15.000 requests/sec to your application.
 
 ```
 Concurrency Level:      16
@@ -49,6 +48,7 @@ Time per request:       0.069 [ms] (mean, across all concurrent requests)
 Transfer rate:          3388922.70 [Kbytes/sec] received
 ```
 
+<!--
 ## WebSockets
 
 wo-adaptor-jetty includes experimental WebSocket support.
@@ -177,3 +177,4 @@ public void onClose(WOWebSocketSession session, int statusCode, String reason) {
 ### Example: Echo Server
 
 See `com.webobjects.appserver.websocket.examples.EchoWebSocketHandler` for a complete working example with heartbeat.
+-->
