@@ -1,16 +1,10 @@
 ## 🔌 wo-adaptor-jetty
 
-A Jetty-based WOAdaptor. Based on Jetty's own servlet-free APIs meaning it's relatively simple and lightweigt.
-
-## Why?
-
-* I want websockets.
-* I like having control over the HTTP-serving part of my applications.
-* The default adaptor for `ng-objects` is Jetty-based meaning a Jetty-based `WOAdaptor` will allow me to serve `WO` and `ng` from the same application / jetty server instance. _And_ I can share WebSocket logic between frameworks.
+A Jetty-based WOAdaptor. Based on Jetty's own servlet-free APIs making it's relatively simple and lightweigt.
 
 ## Usage
 
-Build/install and add as a dependency to your application. Then pass the launch argument `-WOAdaptor WOAdaptorJetty` to your application.
+Build/install and add as a dependency to your app. Then pass the launch argument `-WOAdaptor WOAdaptorJetty` to your application.
 
 ```xml
 <dependency>
@@ -20,21 +14,23 @@ Build/install and add as a dependency to your application. Then pass the launch 
 </dependency>
 ```
 
-## Does this work?
+## Why?
 
-Yes. Very very well. Since November 15th 2025 I've used it in every single one of my applications, some of which handle quite some traffic, large file uploads, multipart request handling etc.
+* WebSockets.
+* I like having control over the HTTP-serving part of my apps.
+* The main adaptor for `ng-objects` is Jetty-based so a Jetty-based `WOAdaptor` allows `WO` and `ng` to be served from the same app/Jetty server instance.
 
-## Performance
+## Does it work?
 
-Running the following locally on my MacBook M4 to serve a simple ~230kb application resource:
+Works great. Since November 2025 I use it in all of my applications, some of which handle quite a bit of traffic, large file uploads, multipart requests etc.
+
+## Performance?
+
+Running `ab` locally on my MacBook M4 to serve a simple ~230kb resource returns the following results, so performance is pretty great. Disabling `KeepAlive` (removing the `-k` parameter) slows us down by roughly half. Which is probably a more realistic benchmark. Not that common for legit clients to make 15.000 requests/sec to your app.
 
 ```
-ab -k -n 10000 -c 16 http://127.0.0.1:1200/Apps/WebObjects/Hugi.woa/res/app/ZillaSlab-Light.ttf
-```
+# ab -k -n 10000 -c 16 http://127.0.0.1:1200/Apps/WebObjects/Hugi.woa/res/app/ZillaSlab-Light.ttf
 
-Returns the following results. So pretty great I'd say. Disabling `KeepAlive` (removing the `-k` parameter) slows us down by about a half which is probably a more realistic benchmark, since it's rare for clients to make 15.000 requests/sec to your application.
-
-```
 Concurrency Level:      16
 Time taken for tests:   0.692 seconds
 Complete requests:      10000
