@@ -268,11 +268,11 @@ public class WOAdaptorJetty extends WOAdaptor {
 		 */
 		public static WORequest requestToWORequest( final Request jettyRequest ) {
 
-			final ConnectionMetaData md = jettyRequest.getConnectionMetaData();
+			final ConnectionMetaData meta = jettyRequest.getConnectionMetaData();
 
 			final String method = jettyRequest.getMethod();
 			final String uri = jettyRequest.getHttpURI().getPathQuery();
-			final String httpVersion = md.getHttpVersion().asString();
+			final String httpVersion = meta.getHttpVersion().asString();
 			final Map<String, List<String>> headers = headerMapFromJettyRequest( jettyRequest );
 
 			final NSData contentData;
@@ -298,7 +298,7 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 			final WORequest worequest = WOApplication.application().createRequest( method, uri, httpVersion, headers, contentData, null );
 
-			populateAddresses( md, worequest );
+			populateAddresses( meta, worequest );
 
 			return worequest;
 		}
@@ -306,14 +306,14 @@ public class WOAdaptorJetty extends WOAdaptor {
 		/**
 		 * Populate origin data in the WORequest
 		 */
-		private static void populateAddresses( final ConnectionMetaData md, final WORequest worequest ) {
+		private static void populateAddresses( final ConnectionMetaData meta, final WORequest worequest ) {
 
-			if( md.getRemoteSocketAddress() instanceof InetSocketAddress remote ) {
+			if( meta.getRemoteSocketAddress() instanceof InetSocketAddress remote ) {
 				worequest._setOriginatingAddress( remote.getAddress() );
 				worequest._setOriginatingPort( remote.getPort() );
 			}
 
-			if( md.getLocalSocketAddress() instanceof InetSocketAddress local ) {
+			if( meta.getLocalSocketAddress() instanceof InetSocketAddress local ) {
 				worequest._setAcceptingAddress( local.getAddress() );
 				worequest._setAcceptingPort( local.getPort() );
 			}
