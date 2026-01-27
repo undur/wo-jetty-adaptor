@@ -203,16 +203,20 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 		@Override
 		public boolean handle( Request request, Response response, Callback callback ) throws Exception {
-			doRequest( request, response, callback );
-			return true;
+			return doRequest( request, response, callback );
 		}
 
-		private void doRequest( final Request jettyRequest, final Response jettyResponse, Callback callback ) throws IOException {
+		private boolean doRequest( final Request jettyRequest, final Response jettyResponse, Callback callback ) throws IOException {
 
 			final WORequest woRequest = requestToWORequest( jettyRequest );
 
 			// This is where the application logic will perform it's actual work
 			final WOResponse woResponse = WOApplication.application().dispatchRequest( woRequest );
+
+			// FIXME: Experimental functionality for passing control through to JEtty
+			if( woResponse.userInfoForKey( "wo-unhandled-response" ) != null ) {
+				return false;
+			}
 
 			jettyResponse.setStatus( woResponse.status() );
 
@@ -261,6 +265,8 @@ public class WOAdaptorJetty extends WOAdaptor {
 
 				callback.succeeded();
 			}
+
+			return true;
 		}
 
 		/**
